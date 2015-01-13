@@ -1,0 +1,120 @@
+<!DOCTYPE Combination  SYSTEM '../Combination.dtd'>
+<Combination>
+  <Channel Name="combined" IsCombined="true" Mass="125"> 
+    <File Name="/sps/atlas/d/delgove/private/Combination/comb_raw/Final_test.root"/>
+    <Workspace Name="combWS"/>
+    <ModelConfig  Name="ModelConfig"/>
+    <ModelData Name="combData"/>
+    <ModelPOI Name="mu[1-1],mu_XS7_ZH[1-1],mu_XS7_ggF[1-1],mu_XS7_VBF[1-1],mu_XS7_WH[1-1],mu_XS7_ttH[1-1],mu_XS7_bbH[1-1],mu_XS8_ZH[1-1],mu_XS8_ggF[1-1],mu_XS8_VBF[1-1],mu_XS8_WH[1-1],mu_XS8_ttH[1-1],mu_VBF_tt8[1-1],mu_XS8_bbH[1-1],mu_BR_gamgam[1-1],mu_8[1-1],mu_BR_ZZ[1-1],mu_BR_WW[1-1],mu_BR_tautau[1-1],mu_BR_bb[1-1],mu_7[1-1],mu_BR_Zgam[1-1],mu_BR_mumu[1-1]"/>
+  </Channel>
+ <Channel Name="vhbb_2012">
+    <File Name="/sps/atlas/d/delgove/private/Combination/comb_raw/vhbb_raw_modif.root"/>
+    <Workspace Name="combined"/>
+    <ModelConfig Name="ModelConfig"/>    
+ 	<ModelPOI Name="dummy,SigXsecOverSMggZH_7TeV,dummy,dummy,SigXsecOverSMWH_7TeV,dummy,dummy,SigXsecOverSMggZH_8TeV,dummy,dummy,SigXsecOverSMWH_8TeV,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy"/>
+    <ModelData Name="combData"/>
+    <RenameMap>
+       <Syst OldName=     "master_measurement"       NewName="vhbb_2012"/>
+    </RenameMap>
+  </Channel>   
+  <Channel Name="gg_2012">
+    <File Name="/sps/atlas/d/delgove/private/Combination/comb_raw/gamgam_ht_raw.root"/>
+    <Workspace Name="combination"/>
+    <ModelConfig Name="mconfig"/>    
+ 	<ModelPOI Name="mu,mu_ZH_7TeV,mu_ggH_7TeV,mu_VBF_7TeV,mu_WH_7TeV,mu_ttH_7TeV,mu_bbH_7TeV,mu_ZH_8TeV,mu_ggH_8TeV,mu_VBF_8TeV,mu_WH_8TeV,mu_ttH_8TeV,mu_bbH_8TeV,mu_BR_gg,mu_8TeV,dummy,dummy,dummy,dummy,mu_7TeV,dummy,dummy"/>
+    <ModelData Name="obsData"/>
+    <RenameMap>
+       <Syst OldName=     "channellist"       NewName="gg_2012"/>
+    </RenameMap>
+  </Channel>
+  <Channel Name="WW_2012">
+    <File Name="/sps/atlas/d/delgove/private/Combination/comb_raw/ww_2012_raw.root"/>
+    <Workspace Name="combWS"/>
+    <ModelConfig Name="ModelConfig"/>    
+	<ModelPOI Name="SigXsecOverSM,dummy,dummy,dummy,dummy,dummy,dummy,ATLAS_sampleNorm_zh125.36,ATLAS_sampleNorm_ggf125.36,ATLAS_sampleNorm_vbf125.36,ATLAS_sampleNorm_wh125.36,ATLAS_sampleNorm_ggftt125.36,ATLAS_sampleNorm_vbftt125.36,dummy,dummy,dummy,dummy,mu_BR_WW,mu_BR_TAUTAU,dummy,dummy,dummy,dummy"/>
+     <ModelData Name="combData"/>
+    <RenameMap>
+       <Syst OldName=     "combCat"       NewName="WW_2012"/>
+    </RenameMap>
+  </Channel> 
+  <Channel Name="WW_2011">
+    <File Name="/sps/atlas/d/delgove/private/Combination/comb_raw/ww_2011_raw.root"/>
+    <Workspace Name="combWS"/>
+    <ModelConfig Name="ModelConfig"/>    
+	<ModelPOI Name="SigXsecOverSM,ATLAS_sampleNorm_zh125.36,ATLAS_sampleNorm_ggf125.36,ATLAS_sampleNorm_vbf125.36,ATLAS_sampleNorm_wh125.36,dummy,dummy,dummy,dummy,dummy,dummy,ATLAS_sampleNorm_ggftt125.36,ATLAS_sampleNorm_vbftt125.36,dummy,dummy,dummy,dummy,mu_BR_WW,mu_BR_TAUTAU,dummy,dummy,dummy,dummy"/>
+     <ModelData Name="combData"/>
+    <RenameMap>
+       <Syst OldName=     "combCat"       NewName="WW_2011"/>
+    </RenameMap>
+  </Channel> 
+  <Channel Name="ZZ_2012" > 
+    <File Name="/sps/atlas/d/delgove/private/Combination/comb_raw/zz_2012_raw.root"/>
+    <Workspace Name="combined"/>
+    <ModelConfig  Name="ModelConfig"/>
+    <ModelData Name="obsData"/>	
+	<ModelPOI Name="mu,dummy,dummy,dummy,dummy,dummy,dummy,mu_XS8_ZH,mu_XS8_ggF,mu_XS8_VBF,mu_XS8_WH,mu_XS8_ttH,dummy,mu_XS8_bbH,dummy,dummy,mu_BR_ZZ,dummy,dummy,dummy,dummy,dummy,dummy"/>
+    <RenameMap>
+      <Syst OldName=     "channelCat"       NewName="ZZ_2012"/>
+    </RenameMap>
+  </Channel> 
+  <Channel Name="ZZ_2011" > 
+    <File Name="/sps/atlas/d/delgove/private/Combination/comb_raw/zz_2011_raw.root"/>
+    <Workspace Name="combined"/>
+    <ModelConfig  Name="ModelConfig"/>
+    <ModelData Name="obsData"/>	
+	<ModelPOI Name="mu,mu_XS7_ZH,mu_XS7_ggF,mu_XS7_VBF,mu_XS7_WH,mu_XS7_ttH,mu_XS7_bbH,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,mu_BR_ZZ,dummy,dummy,dummy,dummy,dummy,dummy"/>
+    <RenameMap>
+      <Syst OldName=     "channelCat"       NewName="ZZ_2011"/>
+    </RenameMap>
+  </Channel> 
+   <Channel Name="tt_2012">
+    <File Name="/sps/atlas/d/delgove/private/Combination/comb_raw/tt_raw.root"/>
+    <Workspace Name="combined"/>
+    <ModelConfig Name="ModelConfig"/>    
+ 	<ModelPOI Name="SigXsecOverSM,mu_XS7_ZH,mu_XS7_ggH,mu_XS7_VBF,mu_XS7_WH,dummy,dummy,mu_XS8_ZH,mu_XS8_ggH,mu_XS8_VBF,mu_XS8_WH,dummy,dummy,dummy,dummy,dummy,dummy,mu_BR_WW,mu_BR_tautau,dummy,dummy,dummy,dummy"/>
+    <ModelData Name="obsData"/>
+    <RenameMap>
+       <Syst OldName=     "channelCat"       NewName="tt_2012"/>
+    </RenameMap>
+  </Channel>    
+  <Channel Name="zgam_2012">
+    <File Name="/sps/atlas/d/delgove/private/Combination/comb_raw/zgam_raw.root"/>
+    <Workspace Name="combination"/>
+    <ModelConfig Name="mconfig"/>    
+ 	<ModelPOI Name="mu,mu_XS7_ZH,mu_XS7_ggF,mu_XS7_VBF,mu_XS7_WH,mu_XS7_ttH,dummy,mu_XS8_ZH,mu_XS8_ggF,mu_XS8_VBF,mu_XS8_WH,mu_XS8_ttH,dummy,dummy,dummy,mu_8TeV,dummy,dummy,dummy,dummy,mu_7TeV,mu_BR_Zgam,dummy"/>
+    <ModelData Name="obsData"/>
+    <RenameMap>
+       <Syst OldName=     "channellist"       NewName="zgam_2012"/>
+    </RenameMap>
+  </Channel> 
+  <Channel Name="mumu_2012">
+    <File Name="/sps/atlas/d/delgove/private/Combination/comb_raw/mumu_raw.root"/>
+    <Workspace Name="uuspace"/>
+    <ModelConfig Name="ModelConfig"/>    
+ 	<ModelPOI Name="mu,dummy,mu_XS7_ggH,mu_XS7_VBF,mu_XS7_VH,dummy,dummy,dummy,mu_XS8_ggH,mu_XS8_VBF,mu_XS8_VH,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,mu_BR_mumu"/>
+    <ModelData Name="obsData"/>
+    <RenameMap>
+       <Syst OldName=     "channellist"       NewName="mumu_2012"/>
+    </RenameMap>
+  </Channel>
+  <Channel Name="tthbb_2012">
+    <File Name="/sps/atlas/d/delgove/private/Combination/comb_raw/tthbb_raw.root"/>
+    <Workspace Name="combined"/>
+    <ModelConfig Name="ModelConfig"/>    
+ 	<ModelPOI Name="dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,mu_XS_ttH,dummy,dummy,mu_BR_gamgam,dummy,BR_ZZ,BR_WW,BR_tautau,BR_bb,dummy,dummy,dummy"/>
+    <ModelData Name="obsData"/>
+    <RenameMap>
+       <Syst OldName=     "channelCat"       NewName="tthbb"/>
+    </RenameMap>
+  </Channel>
+   <Channel Name="tthlep_2012">
+    <File Name="/sps/atlas/d/delgove/private/Combination/comb_raw/tthlep_raw.root"/>
+    <Workspace Name="combined"/>
+    <ModelConfig Name="ModelConfig"/>    
+ 	<ModelPOI Name="SigXsecOverSM,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy"/>
+    <ModelData Name="obsData"/>
+    <RenameMap>
+       <Syst OldName=     "channelCat"       NewName="tthlep"/>
+    </RenameMap>
+  </Channel>  
+</Combination>
