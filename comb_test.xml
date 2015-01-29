@@ -11,7 +11,7 @@
     <File Name="/sps/atlas/d/delgove/private/Combination/comb_raw/vhbb_raw_modif.root"/>
     <Workspace Name="combined"/>
     <ModelConfig Name="ModelConfig"/>    
- 	<ModelPOI Name="dummy,SigXsecOverSMggZH_7TeV*mu_7*mu_BR_bb, dummy,dummy,SigXsecOverSMWH_7TeV,dummy,dummy,SigXsecOverSMggZH_8TeV,dummy,dummy,SigXsecOverSMWH_8TeV,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy"/>
+ 	<ModelPOI Name="dummy,SigXsecOverSMggZH_7TeV*mu_7*mu_BR_bb,dummy,dummy,SigXsecOverSMWH_7TeV=SigXsecOverSMggZH_8TeV,dummy,dummy,dummy,dummy,dummy,SigXsecOverSMWH_8TeV,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy,dummy"/>
     <ModelData Name="combData"/>
     <RenameMap>
        <Syst OldName=     "master_measurement"       NewName="vhbb_2012"/>

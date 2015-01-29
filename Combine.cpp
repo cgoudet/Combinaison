@@ -2,6 +2,8 @@
 #include "RooCustomizer.h"
 #include "Combine.h"
 #include "CloseCoutSentry.h"
+#include "SideFunctions.h"
+
 using namespace RooFit;
 using namespace RooStats;
 using namespace std;
@@ -853,12 +855,14 @@ int Combine::SplitPOI() {
 
   //Create a vector with the name of all final poi
   vector< RooRealVar* > combinedVariables;
-  for ( unsigned int var=0; var < m_combined_name; var++ ) {
+  for ( unsigned int var=0; var < m_combined_pois_name.size(); var++ ) {
     combinedVariables.push_back( 0 );
-    combinedVariables.back() = new RooRealVar( m_combined_name[var].c_str(), m_combined_name[var].c_str(), 1, 1, 1);
+    combinedVariables.back() = new RooRealVar( m_combined_pois_name[var].c_str(), m_combined_pois_name[var].c_str(), 1, 1, 1);
   }
 
-  for ( unsigned int channel = 0; channel < 1; channel++ ) {
+
+
+  for ( unsigned int channel = 0; channel < m_files_name.size() ; channel++ ) {
 
     //Gather info from channel workspace
     TFile *channelFile = new TFile( m_files_name[channel].c_str() );
@@ -866,47 +870,101 @@ int Combine::SplitPOI() {
       cout << "File " << m_files_name[channel] << " doest not exist" << endl;
       return 1;
     }
-    RooWorkspace *channelWS = channelFile->Get( m_workspaces_name[channel].c_str() );
+    RooWorkspace *channelWS = (RooWorkspace*) channelFile->Get( m_workspaces_name[channel].c_str() );
     if ( !channelWS ) {
       cout << "Worspace " << m_workspaces_name[channel] << " does not exist in " << m_files_name[channel] << endl;
       return 2;
     }
+    ModelConfig *mc = (ModelConfig*) channelWS->obj( m_ModelConfigs_name[ channel ].c_str() );
+    for ( unsigned int var=0; var < m_combined_pois_name.size(); var++ ) {
+      channelWS->import( *combinedVariables[var], RooFit::RecycleConflictNodes() );
+    }
 
 
-  // //Gather the workspace
-  // TFile *oldFile = new TFile( "m_" );
-  //   cout << "Dealing with channel : " << endl;
+    //Start creating the editing line
+    stringstream editStr; 
+    editStr << "EDIT::" << mc->GetPdf()->GetName() << "_CombConvention(" << mc->GetPdf()->GetName();
 
 
+    for ( unsigned int poi = 0; poi < m_pois_name[channel].size(); poi++ ) {
 
-  //   for ( unsigned int poi = 0; poi < m_pois_name[channel].size(); poi++ ) {
-  //     vector< string > splittedVariables;
-
-  //     string allVar = m_pois_name[channel][poi];
-  //     string var;
-  //     //Find the * in the name to identify the splitted variables and remove the name from allVar
-  //     while ( allVar.size() ) {
-  // 	int index = allVar.find_first_of("*");
-  // 	if ( index == -1 ) {
-  // 	  splittedVariables.push_back( allVar );
-  // 	  allVar = "";
-  // 	}
-  // 	else {
-  // 	var=allVar.substr( 0, allVar.find_first_of("*") );
-  // 	splittedVariables.push_back( var );
-  // 	allVar = allVar.substr( index+1 );
-  // 	}//end else
-  //     }//end while
-
-  //     //Look for the splitted varaibles into the list of combined variables
+      //Splite teh pois string into individual names
+      vector< string > splittedVariables, mergedVariables;
+      SplitVarNames( m_pois_name[channel][poi] , splittedVariables );      
+      MergedVarNames( m_pois_name[channel][poi] , mergedVariables );      
+      if ( splittedVariables.size()==1 && splittedVariables.front()=="dummy" ) continue;
 
 
 
-  //   }//End loop poi
+      if ( mergedVariables.size() > 1 ) {
+
+	for ( unsigned int var = 0; var < mergedVariables.size(); var++ ) {
+	  editStr << "," << mergedVariables[var] << "=" << m_combined_pois_name[ poi ];
+	}
+
+	m_pois_name[channel][poi] = m_combined_pois_name[ poi ]; 
+      }
+
+
+      if ( splittedVariables.size() > 1 ) {
+      string unknownVar = "";
+      for ( unsigned int var = 0; var < splittedVariables.size(); var++ ) {
+
+	//Check if the current variable belong to the combined variables
+	int indexVar = FindVariable( splittedVariables[var], m_combined_pois_name );
+
+	if ( indexVar == -1 ) {
+	  if ( unknownVar == "" ) {
+ 	    unknownVar = splittedVariables[var];
+	    m_pois_name[ channel ][ poi ] = m_combined_pois_name[ poi ];
+	    //If the variable is to be renamed, start an editing line, including a product of names (in case of splitting)
+	    editStr << "," << unknownVar << "=prod::" << unknownVar << "Split(" << m_combined_pois_name[ poi ];
+
+	    //Cath up for the product with the variables that already existed
+	    //Should not be used if the renamed variable is in first position in the xml file
+	    for ( unsigned int i = 0; i < var; i++ ) {
+	      editStr << "," << splittedVariables[i];
+	    }
+	  }//End if unknown=""
+
+	  //Error message in case several variables do not belong to combined variables
+	  else {
+	    cout << "Error : Several unknown var in line " << m_pois_name[channel][poi] << endl;
+	    return 3;
+	  }}//End indexVar==-1
+
+
+	else {
+	  if ( m_pois_name[ channel ][ indexVar ] == "dummy" ) m_pois_name[ channel ][ indexVar ] = splittedVariables[ var ];
+	  //Add the variable to the product
+	  // The condition means that the renamed variable have already been identified so the start of the editing line is already done
+	  if ( unknownVar != "" ) editStr << "," << splittedVariables[var];
+	  }
+
+      } //End loop var
+      //Close the product in editing line if needed
+      if ( unknownVar != "" ) editStr << ")";
+      }//End splittedVar
 
 
 
+    }//End loop poi
 
+    //Close the editing line
+    editStr << ")";
+
+    cout << editStr.str() << endl;
+    // channelWS->factory(editStr.str().c_str());
+
+    // //Create an intermediate workspace to put the new pdf and data
+    // RooWorkspace *tempWS = new RooWorkspace(  TString(channelWS->GetName()) + "_temp" , TString( channelWS->GetName()) + "_temp" );
+    // tempWS->import( *channelWS->pdf( TString( mc->GetPdf()->GetName()) + "_CombConvention" ) );
+    // tempWS->import( *channelWS->data( m_datas_name[ channel ].c_str() ) );
+    // tempWS->writeToFile(  TString(m_files_name[ channel ].c_str()) + "_CombConvention.root" );
+
+    // //Change the information for the following program to find the new input workspace
+    // m_workspaces_name[ channel ] = tempWS->GetName();
+    // m_files_name[ channel ] = TString(m_files_name[ channel ].c_str()) + "_CombConvention.root";
   }//End loop on cahnnels
 
   return 0;
