@@ -24,7 +24,7 @@
 #include "RooArgList.h"
 #include "RooMoment.h"
 #include "RooGaussian.h"
-#include "/afs/in2p3.fr/home/d/delgove/private/Combination/Couplage/CloseCoutSentry.cc"
+//#include "/afs/in2p3.fr/home/d/delgove/private/Combination/Couplage/CloseCoutSentry.cc"
 
 using namespace RooFit;
 using namespace RooStats;
@@ -39,13 +39,14 @@ class Combine{
   void MergeWorkspace();
   void CreateModelConfig();
   void Print();
+  void MergeCategory();
+  void CreateFinalWorkspace();
+  int SplitPOI();
   
  private:
 
   void GetPOIMinMax(TString poi_list, vector<string> *combined_pois_name, vector<string> *max_pois, vector<string> *min_pois);
   void GetPOI(TString poi_list, vector<string> *pois_name);
-  void MergeCategory();
-  void CreateFinalWorkspace();
   void GetComponents(RooProdPdf *prodpdf, RooArgSet *np);
   string m_combined_name;
   string m_combined_file_name;

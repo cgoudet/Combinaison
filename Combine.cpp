@@ -1,6 +1,7 @@
 #include "RooStats/HistFactory/FlexibleInterpVar.h"
 #include "RooCustomizer.h"
 #include "Combine.h"
+#include "CloseCoutSentry.h"
 using namespace RooFit;
 using namespace RooStats;
 using namespace std;
@@ -14,7 +15,7 @@ Combine::Combine(string filename){
   //Check if the xml file is ok 
   xmlparser.ParseFile( filename.c_str() );
   TXMLDocument* xmldoc = xmlparser.GetXMLDocument();
-  TXMLNode *root_node = xmldoc->GetRootNode();
+  TXMLNode *root_node  = xmldoc->GetRootNode();
   TXMLNode *next_node = root_node->GetChildren();
   TString attr_name;
   TString attr_value;
@@ -22,6 +23,7 @@ Combine::Combine(string filename){
     bool iscombined = false;
     TString node_name = next_node->GetNodeName();
     if( node_name == "Channel") {      
+      //Read the line starting by Channel
       TList *list = next_node->GetAttributes();
       if(list!=0) {
 	TIterator *it = list->MakeIterator();
@@ -36,6 +38,7 @@ Combine::Combine(string filename){
 	}
 	it->Reset();
 	if(iscombined) {
+	  // If the line described the combined workspace, fill the name attribute
 	  for (TXMLAttr * atr = (TXMLAttr*)it->Next();atr!=0;atr= (TXMLAttr*)it->Next()){
 	    attr_name=atr->GetName();
 	    attr_value=atr->GetValue();
@@ -45,6 +48,7 @@ Combine::Combine(string filename){
 	  }
 	}
 	else {
+	  //Else, fill the attribute list of used channels with the current channel 
 	  for (TXMLAttr * atr = (TXMLAttr*)it->Next();atr!=0;atr= (TXMLAttr*)it->Next()){
 	    attr_name=atr->GetName();
 	    attr_value=atr->GetValue();
@@ -53,10 +57,12 @@ Combine::Combine(string filename){
 	    }
 	  }
 	}
-      }
+      }//End channel attibutes not empty
+
       TXMLNode *channel_node = next_node->GetChildren();
       TString children_node_name = channel_node->GetNodeName();      
       if(iscombined) {
+	//Fill remaining information for the combined workspace
 	while(channel_node!=0) {
 	  children_node_name = channel_node->GetNodeName(); 
 	  TList *list_2 = channel_node->GetAttributes();
@@ -66,28 +72,19 @@ Combine::Combine(string filename){
 	      attr_name=atr->GetName();
 	      attr_value=atr->GetValue();
 	      if(attr_name == "Name") {
-		if(children_node_name=="File"){
-		  m_combined_file_name=attr_value;
-		}
-		if(children_node_name=="Workspace"){
-		  m_combined_workspace_name=attr_value;
-		}
-		if(children_node_name=="ModelConfig"){
-		  m_combined_ModelConfig_name=attr_value;
-		}
-		if(children_node_name=="ModelData"){
-		  m_combined_data_name=attr_value;
-		}
-		if(children_node_name=="ModelPOI"){
-		  GetPOIMinMax(attr_value,&m_combined_pois_name,&m_max_pois,&m_min_pois);
-		}
+		if(children_node_name=="File")        m_combined_file_name=attr_value;
+		if(children_node_name=="Workspace")   m_combined_workspace_name=attr_value;
+		if(children_node_name=="ModelConfig") m_combined_ModelConfig_name=attr_value;
+		if(children_node_name=="ModelData")   m_combined_data_name=attr_value;
+		if(children_node_name=="ModelPOI")    GetPOIMinMax(attr_value,&m_combined_pois_name,&m_max_pois,&m_min_pois);
 	      }
 	    }
 	  }
 	  channel_node = channel_node->GetNextNode();
 	}
-      }
-      else{
+      }//End isCombined
+
+      else{ //Fill information about the current channel
 	while(channel_node!=0) {
 	  children_node_name = channel_node->GetNodeName(); 
 	  TList *list_2 = channel_node->GetAttributes();
@@ -97,26 +94,20 @@ Combine::Combine(string filename){
 	      attr_name=atr->GetName();
 	      attr_value=atr->GetValue();
 	      if(attr_name == "Name") {
-		if(children_node_name=="File"){
-		  m_files_name.push_back(attr_value.Data());
-		}
-		if(children_node_name=="Workspace"){
-		  m_workspaces_name.push_back(attr_value.Data());
-		}
-		if(children_node_name=="ModelConfig"){
-		  m_ModelConfigs_name.push_back(attr_value.Data());
-		}
-		if(children_node_name=="ModelData"){
-		  m_datas_name.push_back(attr_value.Data());
-		}
-		if(children_node_name=="ModelPOI"){
+		if(children_node_name=="File")	      m_files_name.push_back(attr_value.Data());
+		if(children_node_name=="Workspace")   m_workspaces_name.push_back(attr_value.Data());
+		if(children_node_name=="ModelConfig") m_ModelConfigs_name.push_back(attr_value.Data());
+		if(children_node_name=="ModelData")   m_datas_name.push_back(attr_value.Data());
+		if(children_node_name=="ModelPOI") {
 		  vector<string> temp;
 		  GetPOI(attr_value,&temp);
 		  m_pois_name.push_back(temp);		  
 		}
-	      }
+	      }//End attr_name ==Name
 	    }
 	  }
+
+	  //Fill the rename map component
 	  if(children_node_name=="RenameMap"){
 	    vector<string> new_temp;
 	    vector<string> old_temp;
@@ -131,12 +122,8 @@ Combine::Combine(string filename){
 		  for (TXMLAttr * atr = (TXMLAttr*)it_3->Next();atr!=0;atr= (TXMLAttr*)it_3->Next()){
 		    attr_name=atr->GetName();
 		    attr_value=atr->GetValue();
-		    if(attr_name=="OldName") {
-		      old_temp.push_back(attr_value.Data());
-		    }
-		    if(attr_name=="NewName") {
-		      new_temp.push_back(attr_value.Data());
-		    }
+		    if(attr_name=="OldName")  old_temp.push_back(attr_value.Data());
+		    if(attr_name=="NewName")  new_temp.push_back(attr_value.Data());
 		  }
 		}
 	      }
@@ -144,13 +131,14 @@ Combine::Combine(string filename){
 	    }
 	    m_renamemap_old.push_back(old_temp);
 	    m_renamemap_new.push_back(new_temp);
-	  }
+	  }// End rename map
+
 	  channel_node = channel_node->GetNextNode();
-	}
-      }
-    }
+	}// End filling a channel
+      }//End if not combined
+    }//End nodeName = channel
     next_node = next_node->GetNextNode();
-  }
+  }//end loopo other all nodes
  
 }
 
@@ -168,6 +156,7 @@ void Combine::GetPOIMinMax(TString poi_list, vector<string> *combined_pois_name,
     max_pois->push_back(temp.Data());
   }  
 }
+
 void Combine::GetPOI(TString poi_list, vector<string> *pois_name){
   TObjArray * list_poi = poi_list.Tokenize(",[-]");
   for(int i=0; i<list_poi->GetEntriesFast(); i++){
@@ -184,38 +173,39 @@ void Combine::Print(){
   cout << " Model : " << m_combined_ModelConfig_name << endl;
   cout << " DataSet : " << m_combined_data_name << endl;
   cout << " POI : " << endl;
-  for(int i =0; i<m_combined_pois_name.size(); i++){
+  for(int i =0; i< (int) m_combined_pois_name.size(); i++){
     cout << "       " << m_combined_pois_name.at(i) << " with range : [" << m_min_pois.at(i) << "," << m_max_pois.at(i) << "]" << endl;
   }
   cout << endl;
   
   cout << "Different channels : " << endl;
-  for(int i =0; i<m_channels_name.size(); i++){
+  for(int i =0; i< (int) m_channels_name.size(); i++){
     cout << " Channel : " << m_channels_name.at(i) << endl;
     cout << "  In the file : " << m_files_name.at(i) << endl;
     cout << "  Combined workspace : " << m_workspaces_name.at(i) << endl;
     cout << "  Model : " << m_ModelConfigs_name.at(i) << endl;
     cout << "  DataSet : " << m_datas_name.at(i) << endl;
     cout << "  POI : " << endl;
-    for(int j =0; j<m_pois_name.at(i).size(); j++){
+    for(int j =0; j < (int) m_pois_name.at(i).size(); j++){
       TString temp=m_pois_name.at(i).at(j);
       if( !temp.Contains("dummy")) {
 	cout << "        " << m_pois_name.at(i).at(j) << " ---> " << m_combined_pois_name.at(j) << endl;
       }
     }
     cout << "  Rename Map : " << endl;
-    for(int j =0; j<m_renamemap_new.at(i).size(); j++){
+    for(int j =0; j < (int ) m_renamemap_new.at(i).size(); j++){
       cout << "        " << m_renamemap_old.at(i).at(j) << " ---> " << m_renamemap_new.at(i).at(j) << endl;      
     }
   }
 }
 
+//=============================
 void Combine::MergeWorkspace(){
   
   cout << "Begin Merge Workspace" << endl;
   cout << endl;
   RooWorkspace* temp_w = new RooWorkspace("temp","temp");
-  for(int i=0;i<m_files_name.size();i++) {
+  for(int i=0; i < (int) m_files_name.size();i++) {
     cout << "Workspace in " << m_files_name.at(i) << " : begin  " << endl;
     TFile *f = TFile::Open(m_files_name.at(i).c_str());
     stringstream old_str;
@@ -224,21 +214,20 @@ void Combine::MergeWorkspace(){
     stringstream data_old;
 
     RooWorkspace* old_w = (RooWorkspace*)f->Get(m_workspaces_name.at(i).c_str());
-    if(old_w==0){
-      cout <<  m_workspaces_name.at(i).c_str() << " is not a workspace"<< endl;
-    }
+    if(old_w==0) cout <<  m_workspaces_name.at(i).c_str() << " is not a workspace"<< endl;
+
     RooArgSet avar = old_w->allVars();
 
     ModelConfig *mc = (ModelConfig*) old_w->obj(m_ModelConfigs_name.at(i).c_str());
-    if(mc==0){
-      cout <<  m_ModelConfigs_name.at(i).c_str() << " is not a ModelConfig"<< endl;
-    }
+    if(mc==0) cout <<  m_ModelConfigs_name.at(i).c_str() << " is not a ModelConfig"<< endl;
+
     RooArgSet obs = *mc->GetObservables();
     RooArgSet gobs = *mc->GetGlobalObservables();
     TIterator* gobs_itr = gobs.createIterator();
    
     RooArgSet func = old_w->allFunctions();
 
+    //Rename all functions adding the name of the workspace they belong to 
     TIterator* func_itr = func.createIterator();
     for( RooAbsArg* v = (RooAbsArg*)func_itr->Next(); v!=0; v = (RooAbsArg*)func_itr->Next() ){
       v->SetName( (string(v->GetName())+"_"+m_channels_name.at(i)).c_str());
@@ -259,6 +248,7 @@ void Combine::MergeWorkspace(){
 	pdf2.remove(*p);
       }
     }	  
+
     // special treatment of the Lumi
     if(old_w->var("Lumi")){
       cout << "Workspace contains Lumi" << endl;
@@ -266,14 +256,14 @@ void Combine::MergeWorkspace(){
       TString newpdf_name;
       TString newlumig_name;
       
+      //Rename the luminosity depending wether or not it appear in renamemap
       bool test_rename = false;
-      for (int j=0; j< m_renamemap_old.at(i).size();j++){
-	if(TString(m_renamemap_old.at(i).at(j))=="Lumi") {
-	  newlumi_name=m_renamemap_new.at(i).at(j);
-	  newpdf_name= m_renamemap_new.at(i).at(j)+"Constrain";
-	  newlumig_name = m_renamemap_new.at(i).at(j) + "_In";
-	  test_rename = true;
-	}
+      for (int j=0; j < (int) m_renamemap_old.at(i).size();j++){
+	if ( TString(m_renamemap_old.at(i).at(j))!="Lumi") continue;
+	newlumi_name=m_renamemap_new.at(i).at(j);
+	newpdf_name= m_renamemap_new.at(i).at(j)+"Constrain";
+	newlumig_name = m_renamemap_new.at(i).at(j) + "_In";
+	test_rename = true;
       }
       if(!test_rename){
 	newlumi_name = "Lumi"+m_channels_name.at(i);
@@ -285,27 +275,24 @@ void Combine::MergeWorkspace(){
       if( combPdf==0){
 	cout << mc_pdf->GetName() << " not in the independent workspace : " << m_workspaces_name.at(i).c_str() << endl;
       }
+
       TString combpdf_name = combPdf->GetName();	
       RooCategory *tmpcat ;
       RooArgSet tmp_obs = *mc->GetObservables();
       TIterator *it_obs_tmp = tmp_obs.createIterator();
+      //Look for the rooCategory within the observables
       for ( RooRealVar* v = (RooRealVar*)it_obs_tmp->Next(); v!=0; v = (RooRealVar*)it_obs_tmp->Next() ){
-	if(old_w->cat(v->GetName())!=0){
-	  tmpcat = old_w->cat(v->GetName());
-	}
-	else {
-	  cout << v->GetName() << " is not a category " << endl;
-	}
+	if(old_w->cat(v->GetName())!=0)tmpcat = old_w->cat(v->GetName());
+	else cout << v->GetName() << " is not a category " << endl;
       }  
+
       RooRealVar *lumi = old_w->var("Lumi");
       RooGaussian* lumic = (RooGaussian*) old_w->pdf("lumiConstraint"); 
-      if(lumic==0){
-	cout << "lumiConstraint not in the workspace" << endl;
-      }
-      RooRealProxy prox_sigma = lumic->sigma;
-      RooRealProxy prox_mean = lumic->mean;
-      double sigma_lumi= prox_sigma.arg().getVal();
-      double mean_lumi = prox_mean.arg().getVal();
+      if(lumic==0) cout << "lumiConstraint not in the workspace" << endl;
+
+      double sigma_lumi  = lumic->RooAbsReal::sigma(*lumi)->getVal();
+      double mean_lumi= lumic->RooAbsReal::mean(*lumi)->getVal();
+
       if( fabs(sigma_lumi-1)>0.001 && mean_lumi==1){
 	cout << "Transform in lognormal" << endl;
 	combPdf->SetName( (string(combpdf_name.Data())+"_Obsolete").c_str());
@@ -314,16 +301,12 @@ void Combine::MergeWorkspace(){
 	lumi->SetName("obsolete_lumi");
 	lumic->SetName("obsolete_lumi_pdf");
 	RooArgSet * param_gauss = lumic->getVariables();
-	if(!param_gauss->remove(*param_gauss->find(lumi->GetName()))) {
-	  cout << "problem lumi is not a variable of the gaussian constrain" << endl;
-	}
-	if(param_gauss->getSize()!=1) {
-	  cout << "problem there is an additionnal variable for the gaussian constrain" << endl;
-	}
+	if(!param_gauss->remove(*param_gauss->find(lumi->GetName()))) cout << "problem lumi is not a variable of the gaussian constrain" << endl;
+	if(param_gauss->getSize()!=1) cout << "problem there is an additionnal variable for the gaussian constrain" << endl;
+	
 	RooRealVar *lumi_gobs = old_w->var(param_gauss->first()->GetName());
-	if(lumi_gobs==0){
-	  cout << param_gauss->first()->GetName() << "not in the old workspace " << endl; 
-	}
+	if(lumi_gobs==0) cout << param_gauss->first()->GetName() << "not in the old workspace " << endl; 
+
 	lumi_gobs->SetName("obsolete_lumi_In");
 	avar.remove(*lumi_gobs);
 	std::string edit = TString::Format("Gaussian::%s(%s[-5,5],%s[0,-5,5],1)",newpdf_name.Data(), newlumi_name.Data(),newlumig_name.Data()).Data();
@@ -380,10 +363,14 @@ void Combine::MergeWorkspace(){
 	mc->SetPdf(*combPdf_newlumi_final);
 	mc_pdf = combPdf_newlumi_final;
       }  
-    }
-    // loop over the rename map, remove the rename parameter of the argset which contains all the var, rename the linked global observable and the gaussian pdf if find
+    }//End if lumi exists in workspace
+
+
+    // loop over the rename map, 
+    //remove the rename parameter of the argset which contains all the var, 
+    //rename the linked global observable and the gaussian pdf if find
     bool cat_newname=false;
-    for (int j=0; j< m_renamemap_old.at(i).size();j++){
+    for (int j=0; j< (int) m_renamemap_old.at(i).size();j++){
       // Rename the category (not sure it is useful)
       if(old_w->cat(m_renamemap_old.at(i).at(j).c_str())!=0) {
 	RooCategory* cat_temp =(RooCategory*)old_w->cat(m_renamemap_old.at(i).at(j).c_str());
@@ -520,7 +507,7 @@ void Combine::MergeWorkspace(){
     }
     // Rename the poi 
     bool hasgg = false;
-    for(int j=0;j<m_pois_name.at(i).size();j++){
+    for(int j=0; j < (int) m_pois_name.at(i).size();j++){
       if( m_pois_name.at(i).at(j)!="dummy") {
 	if(old_w->var(m_pois_name.at(i).at(j).c_str())!=0){
 	  if(m_combined_pois_name.at(j)=="mu_BR_gamgam"){
@@ -588,7 +575,7 @@ void Combine::CreateModelConfig(){
   ModelConfig * newmc = new ModelConfig("ModelConfigtemp",m_temp_w);
   RooArgSet newpoi,newnp,newgobs,newobs;
   // For poi is easy 
-  for(int j=0;j< m_combined_pois_name.size(); j++) {
+  for(int j=0;j< (int) m_combined_pois_name.size(); j++) {
     if(m_temp_w->var(m_combined_pois_name.at(j).c_str())!=0) {
       newpoi.add(*m_temp_w->var(m_combined_pois_name.at(j).c_str()));
     }
@@ -596,7 +583,7 @@ void Combine::CreateModelConfig(){
       cout << m_combined_pois_name.at(j).c_str() << " not in the workspace" << endl;
     }
   }
-  for(int i=0;i<m_files_name.size();i++) {
+  for(int i=0; i < (int) m_files_name.size();i++) {
     TFile *f = TFile::Open(m_files_name.at(i).c_str());
     RooWorkspace* old_w = (RooWorkspace*)f->Get(m_workspaces_name.at(i).c_str());
     ModelConfig *mc = (ModelConfig*) old_w->obj(m_ModelConfigs_name.at(i).c_str());
@@ -611,7 +598,7 @@ void Combine::CreateModelConfig(){
     RooArgSet gobs = *mc->GetGlobalObservables();
     RooArgSet np = *mc->GetNuisanceParameters();
  	
-    for(int j=0; j< m_renamemap_old.at(i).size(); j++){
+    for(int j=0; j< (int) m_renamemap_old.at(i).size(); j++){
       // To be sure that the rename variable is in the np set
       if(np.find(m_renamemap_old.at(i).at(j).c_str())) {
 	if(m_temp_w->var(m_renamemap_new.at(i).at(j).c_str()) !=0) {
@@ -657,7 +644,7 @@ void Combine::MergeCategory(){
   newobs.add(*combcat);
   newobs.add(comb_weight);
   m_newmc->SetObservables(newobs);
-  for(int j=0;j<m_channels_name.size() ; j++) {
+  for(int j=0; j < (int) m_channels_name.size() ; j++) {
     RooCategory *tmp_cat = m_temp_w->cat(m_cat_name.at(j).c_str());
     if(tmp_cat==0){
       cout << m_cat_name.at(j).c_str() << " not in the temporary worksapace" << endl;
@@ -670,7 +657,7 @@ void Combine::MergeCategory(){
   }
   cout << "Create Merged DataSet" << endl;
   RooDataSet *data = new RooDataSet(m_combined_data_name.c_str(),m_combined_data_name.c_str(),newobs,WeightVar(comb_weight));
-  for(int j=0;j< m_channels_name.size(); j++) {
+  for(int j=0; j < (int) m_channels_name.size(); j++) {
     RooSimultaneous *tmp_pdf =(RooSimultaneous*)m_temp_w->pdf((m_pdf_name.at(j)+"_"+m_channels_name.at(j)).c_str());
     if(tmp_pdf==0){
       cout << (m_pdf_name.at(j)+"_"+m_channels_name.at(j)).c_str() << " not in the temporary worksapace" << endl;
@@ -721,7 +708,7 @@ void Combine::MergeCategory(){
   m_data = data;
   cout << "Create Simultaneous Pdf" << endl;
   RooSimultaneous *combPdf = new RooSimultaneous("combPdf","combPdf",*combcat);
-  for(int j=0;j< m_pdf_name.size(); j++) {
+  for(int j=0; j < (int) m_pdf_name.size(); j++) {
     RooSimultaneous *tmp_pdf =(RooSimultaneous*)m_temp_w->pdf((m_pdf_name.at(j)+"_"+m_channels_name.at(j)).c_str());
     if(tmp_pdf==0) {
       cout << (m_pdf_name.at(j)+"_"+m_channels_name.at(j)).c_str() << " : pdf not in the temporary worksapace" << endl;
@@ -777,7 +764,7 @@ void Combine::CreateFinalWorkspace(){
   newmc->SetNuisanceParameters(newnp);
   cout << "np done" << endl;
   
-  for (int i =0; i<m_combined_pois_name.size();i++) {
+  for (int i =0; i < (int) m_combined_pois_name.size();i++) {
     if( new_w->var(m_combined_pois_name.at(i).c_str())!=0) {
       RooRealVar *var_temp = new_w->var(m_combined_pois_name.at(i).c_str());
       if(var_temp==0){
@@ -859,4 +846,68 @@ void Combine::GetComponents(RooProdPdf *prodpdf, RooArgSet *np){
       GetComponents(v_temp,np);
     }
   }
+}
+
+//################################################
+int Combine::SplitPOI() {
+
+  //Create a vector with the name of all final poi
+  vector< RooRealVar* > combinedVariables;
+  for ( unsigned int var=0; var < m_combined_name; var++ ) {
+    combinedVariables.push_back( 0 );
+    combinedVariables.back() = new RooRealVar( m_combined_name[var].c_str(), m_combined_name[var].c_str(), 1, 1, 1);
+  }
+
+  for ( unsigned int channel = 0; channel < 1; channel++ ) {
+
+    //Gather info from channel workspace
+    TFile *channelFile = new TFile( m_files_name[channel].c_str() );
+    if ( !channelFile ) {
+      cout << "File " << m_files_name[channel] << " doest not exist" << endl;
+      return 1;
+    }
+    RooWorkspace *channelWS = channelFile->Get( m_workspaces_name[channel].c_str() );
+    if ( !channelWS ) {
+      cout << "Worspace " << m_workspaces_name[channel] << " does not exist in " << m_files_name[channel] << endl;
+      return 2;
+    }
+
+
+  // //Gather the workspace
+  // TFile *oldFile = new TFile( "m_" );
+  //   cout << "Dealing with channel : " << endl;
+
+
+
+  //   for ( unsigned int poi = 0; poi < m_pois_name[channel].size(); poi++ ) {
+  //     vector< string > splittedVariables;
+
+  //     string allVar = m_pois_name[channel][poi];
+  //     string var;
+  //     //Find the * in the name to identify the splitted variables and remove the name from allVar
+  //     while ( allVar.size() ) {
+  // 	int index = allVar.find_first_of("*");
+  // 	if ( index == -1 ) {
+  // 	  splittedVariables.push_back( allVar );
+  // 	  allVar = "";
+  // 	}
+  // 	else {
+  // 	var=allVar.substr( 0, allVar.find_first_of("*") );
+  // 	splittedVariables.push_back( var );
+  // 	allVar = allVar.substr( index+1 );
+  // 	}//end else
+  //     }//end while
+
+  //     //Look for the splitted varaibles into the list of combined variables
+
+
+
+  //   }//End loop poi
+
+
+
+
+  }//End loop on cahnnels
+
+  return 0;
 }
