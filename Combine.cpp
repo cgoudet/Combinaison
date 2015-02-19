@@ -954,17 +954,17 @@ int Combine::SplitPOI() {
     editStr << ")";
 
     cout << editStr.str() << endl;
-    // channelWS->factory(editStr.str().c_str());
+    channelWS->factory(editStr.str().c_str());
 
-    // //Create an intermediate workspace to put the new pdf and data
-    // RooWorkspace *tempWS = new RooWorkspace(  TString(channelWS->GetName()) + "_temp" , TString( channelWS->GetName()) + "_temp" );
-    // tempWS->import( *channelWS->pdf( TString( mc->GetPdf()->GetName()) + "_CombConvention" ) );
-    // tempWS->import( *channelWS->data( m_datas_name[ channel ].c_str() ) );
-    // tempWS->writeToFile(  TString(m_files_name[ channel ].c_str()) + "_CombConvention.root" );
+    //Create an intermediate workspace to put the new pdf and data
+    RooWorkspace *tempWS = new RooWorkspace(  TString(channelWS->GetName()) + "_temp" , TString( channelWS->GetName()) + "_temp" );
+    tempWS->import( *channelWS->pdf( TString( mc->GetPdf()->GetName()) + "_CombConvention" ) );
+    tempWS->import( *channelWS->data( m_datas_name[ channel ].c_str() ) );
+    tempWS->writeToFile(  TString(m_files_name[ channel ].c_str()) + "_CombConvention.root" );
 
-    // //Change the information for the following program to find the new input workspace
-    // m_workspaces_name[ channel ] = tempWS->GetName();
-    // m_files_name[ channel ] = TString(m_files_name[ channel ].c_str()) + "_CombConvention.root";
+    //Change the information for the following program to find the new input workspace
+    m_workspaces_name[ channel ] = tempWS->GetName();
+    m_files_name[ channel ] = TString(m_files_name[ channel ].c_str()) + "_CombConvention.root";
   }//End loop on cahnnels
 
   return 0;
