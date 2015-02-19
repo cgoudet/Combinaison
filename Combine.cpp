@@ -853,7 +853,7 @@ void Combine::GetComponents(RooProdPdf *prodpdf, RooArgSet *np){
 //################################################
 int Combine::SplitPOI() {
 
-  //Create a vector with the name of all final poi
+  //Create a vector with the RooRealVar of all final poi
   vector< RooRealVar* > combinedVariables;
   for ( unsigned int var=0; var < m_combined_pois_name.size(); var++ ) {
     combinedVariables.push_back( 0 );
