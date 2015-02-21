@@ -2,11 +2,13 @@
 #include "RooCustomizer.h"
 #include "Combine.h"
 #include "CloseCoutSentry.h"
-#include "SideFunctions.h"
+#include <iostream>
 
+using namespace std;
 using namespace RooFit;
 using namespace RooStats;
-using namespace std;
+
+
 
 Combine::~Combine(){
 }
@@ -876,6 +878,8 @@ int Combine::SplitPOI() {
       return 2;
     }
     ModelConfig *mc = (ModelConfig*) channelWS->obj( m_ModelConfigs_name[ channel ].c_str() );
+
+    //Import all combined poi into the workspace, in case they are needed for edition
     for ( unsigned int var=0; var < m_combined_pois_name.size(); var++ ) {
       channelWS->import( *combinedVariables[var], RooFit::RecycleConflictNodes() );
     }
@@ -888,66 +892,12 @@ int Combine::SplitPOI() {
 
     for ( unsigned int poi = 0; poi < m_pois_name[channel].size(); poi++ ) {
 
-      //Splite teh pois string into individual names
-      vector< string > splittedVariables, mergedVariables;
+      //Split the pois string into individual names
+      vector< vector< string > > splittedVariables;
       SplitVarNames( m_pois_name[channel][poi] , splittedVariables );      
-      MergedVarNames( m_pois_name[channel][poi] , mergedVariables );      
-      if ( splittedVariables.size()==1 && splittedVariables.front()=="dummy" ) continue;
-
-
-
-      if ( mergedVariables.size() > 1 ) {
-
-	for ( unsigned int var = 0; var < mergedVariables.size(); var++ ) {
-	  editStr << "," << mergedVariables[var] << "=" << m_combined_pois_name[ poi ];
-	}
-
-	m_pois_name[channel][poi] = m_combined_pois_name[ poi ]; 
-      }
-
-
-      if ( splittedVariables.size() > 1 ) {
-      string unknownVar = "";
-      for ( unsigned int var = 0; var < splittedVariables.size(); var++ ) {
-
-	//Check if the current variable belong to the combined variables
-	int indexVar = FindVariable( splittedVariables[var], m_combined_pois_name );
-
-	if ( indexVar == -1 ) {
-	  if ( unknownVar == "" ) {
- 	    unknownVar = splittedVariables[var];
-	    m_pois_name[ channel ][ poi ] = m_combined_pois_name[ poi ];
-	    //If the variable is to be renamed, start an editing line, including a product of names (in case of splitting)
-	    editStr << "," << unknownVar << "=prod::" << unknownVar << "Split(" << m_combined_pois_name[ poi ];
-
-	    //Cath up for the product with the variables that already existed
-	    //Should not be used if the renamed variable is in first position in the xml file
-	    for ( unsigned int i = 0; i < var; i++ ) {
-	      editStr << "," << splittedVariables[i];
-	    }
-	  }//End if unknown=""
-
-	  //Error message in case several variables do not belong to combined variables
-	  else {
-	    cout << "Error : Several unknown var in line " << m_pois_name[channel][poi] << endl;
-	    return 3;
-	  }}//End indexVar==-1
-
-
-	else {
-	  if ( m_pois_name[ channel ][ indexVar ] == "dummy" ) m_pois_name[ channel ][ indexVar ] = splittedVariables[ var ];
-	  //Add the variable to the product
-	  // The condition means that the renamed variable have already been identified so the start of the editing line is already done
-	  if ( unknownVar != "" ) editStr << "," << splittedVariables[var];
-	  }
-
-      } //End loop var
-      //Close the product in editing line if needed
-      if ( unknownVar != "" ) editStr << ")";
-      }//End splittedVar
-
-
-
+      if ( splittedVariables.size()==1 && splittedVariables.front().front()=="dummy" ) continue;
+      editStr << EditLine( splittedVariables, m_combined_pois_name[poi] );
+    
     }//End loop poi
 
     //Close the editing line
@@ -960,12 +910,135 @@ int Combine::SplitPOI() {
     RooWorkspace *tempWS = new RooWorkspace(  TString(channelWS->GetName()) + "_temp" , TString( channelWS->GetName()) + "_temp" );
     tempWS->import( *channelWS->pdf( TString( mc->GetPdf()->GetName()) + "_CombConvention" ) );
     tempWS->import( *channelWS->data( m_datas_name[ channel ].c_str() ) );
-    tempWS->writeToFile(  TString(m_files_name[ channel ].c_str()) + "_CombConvention.root" );
 
+
+    //Create a new model config
+    ModelConfig *newmc = CreateModelConfig( channelWS, tempWS );
+    newmc->SetName( mc->GetName() );
+    newmc->SetPdf( TString( mc->GetPdf()->GetName()) + "_CombConvention" );
+    //Create the set of poi
+    RooArgSet *poi = new RooArgSet();
+    for ( vector<string>::iterator itPoi = m_combined_pois_name.begin(); itPoi != m_combined_pois_name.end(); itPoi++ ) {
+      RooRealVar *dummy = (RooRealVar*) tempWS->var( itPoi->c_str() );
+      if ( dummy ) poi->add( *dummy );
+    }
+    newmc->SetParametersOfInterest( *poi );
+    tempWS->import( *newmc );
+
+    tempWS->writeToFile(  TString(m_files_name[ channel ].c_str()) + "_CombConvention.root" );
     //Change the information for the following program to find the new input workspace
     m_workspaces_name[ channel ] = tempWS->GetName();
-    m_files_name[ channel ] = TString(m_files_name[ channel ].c_str()) + "_CombConvention.root";
+    m_files_name[ channel ] = TString(m_files_name[ channel ].substr(0, m_files_name[ channel ].find_last_of( "." )).c_str()) + "_CombConvention.root";
   }//End loop on cahnnels
 
   return 0;
+}
+
+
+int Combine::SplitVarNames( string name, vector< vector< string>> &splittedNames ) {
+  splittedNames.clear();
+  string poi;
+  
+  // Puts the merged variables in the first index
+  // puts the product variables in the second index
+
+  while ( name.size() ) {
+    int posEqual = name.find( "=" );
+    string prodPOI = ( posEqual == -1 ) ? name : name.substr( 0, posEqual );
+    splittedNames.push_back( vector< string >() );
+    name.erase( 0, (posEqual==-1) ? name.size() : posEqual+1 );
+
+    while ( prodPOI.size() ) {
+      int posStar = prodPOI.find( "*" );
+      splittedNames.back().push_back( ( posStar == -1 ) ? prodPOI : prodPOI.substr( 0, posStar ) );
+      prodPOI.erase( 0, (posStar==-1) ? prodPOI.size() : posStar+1 );
+    }}
+  
+  
+  //Check of the vector
+  for ( vector<vector<string>>::iterator iti = splittedNames.begin(); iti != splittedNames.end(); iti++ ) {
+    for ( vector<string>::iterator itj = iti->begin(); itj !=iti->end(); itj++ ) {
+      //    cout << (*itj) << " " ;  
+    }
+    //    cout << endl;
+}
+
+  return 0;
+}
+
+
+int Combine::FindVariable( string var, vector<string> &varList ){
+  
+  for ( unsigned int i = 0; i < varList.size(); i++ ) {
+    if ( var == varList[i] ) return i;
+    }
+  
+  return -1;
+}
+
+
+string Combine::EditLine( vector< vector< string >> &splittedNames, string combinedVar ) {
+  string line;
+
+  //We consider that the variable from the old workspace is the first
+  for ( vector<vector<string>>::iterator iti = splittedNames.begin(); iti != splittedNames.end(); iti++ ) {
+    string unknownVar = "";
+
+    if ( iti->size() == 1 ) line+= "," + iti->front() + "=" + combinedVar;
+    else{
+      for ( vector<string>::iterator itj = iti->begin(); itj !=iti->end(); itj++ ) {
+	int isCombinedVar = FindVariable( *itj, m_combined_pois_name );
+	// We suppose that the variable from the old workspace is the first one 
+	// Only one variable from the old workspace must be present between 2 =
+	if ( isCombinedVar == -1 ) line  += "," + *itj + "=prod::" + *itj + "_Split(" +combinedVar ;
+	else line += "," + *itj;
+	
+    }
+      line += ")";
+    }
+  }
+  return line;  
+}
+
+ModelConfig* Combine::CreateModelConfig(const RooWorkspace* wsinput, RooWorkspace* wsout){
+
+  ModelConfig * newmc = new ModelConfig("ModelConfig",wsout);
+  RooArgSet newnp,newgobs,newobs;
+  ModelConfig *mc = (ModelConfig*) wsinput->obj("ModelConfig");
+  cout << "obs" << endl;
+  RooArgSet obs = *mc->GetObservables();
+  TIterator *obs_itr = obs.createIterator();
+   for ( RooRealVar* v = (RooRealVar*)obs_itr->Next(); v!=0; v = (RooRealVar*)obs_itr->Next() ){
+     if(wsout->var(v->GetName())!=0 ) newobs.add(*wsout->var(v->GetName()));
+     else if ( wsout->cat(v->GetName())!=0) newobs.add( *((RooAbsReal*)wsout->cat(v->GetName())));
+     else if ( wsout->function(v->GetName())) newobs.add(*((RooAbsReal*)wsout->function(v->GetName())));
+     else {cout << "Error, variable not found :" << v->GetName() << endl; return 0;}
+    }
+  delete obs_itr;
+  newmc->SetObservables(newobs);
+
+  cout << "gobs" << endl;
+  RooArgSet gobs = *mc->GetGlobalObservables();
+  obs_itr = gobs.createIterator();
+   for ( RooRealVar* v = (RooRealVar*)obs_itr->Next(); v!=0; v = (RooRealVar*)obs_itr->Next() ){
+      if(wsout->var(v->GetName())) newgobs.add(*wsout->var(v->GetName()));
+      else if ( wsout->cat(v->GetName())!=0) newgobs.add( *((RooAbsReal*)wsout->cat(v->GetName())));
+      else if ( wsout->function(v->GetName())) newgobs.add(*wsout->function(v->GetName()));
+      else {cout << "Error, variable not found :" << v->GetName() << endl;}
+    }
+  delete obs_itr;
+  newmc->SetGlobalObservables(newgobs);
+
+  cout << "np" << endl;
+  RooArgSet np = *mc->GetNuisanceParameters();
+  obs_itr = np.createIterator();
+   for ( RooRealVar* v = (RooRealVar*)obs_itr->Next(); v!=0; v = (RooRealVar*)obs_itr->Next() ){
+      if (wsout->var(v->GetName())!=0) newnp.add(*wsout->var(v->GetName()));
+      else if (wsout->function(v->GetName())!=0) newnp.add(*wsout->function(v->GetName()));
+      else {cout << "Error, variable not found :" << v->GetName() << endl;}
+    }
+  delete obs_itr;
+  newmc->SetNuisanceParameters(newnp);
+
+  return newmc;
 }

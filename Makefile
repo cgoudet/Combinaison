@@ -10,7 +10,7 @@ EXE = main.exe
 all : ${EXE}
 	echo "Up to date" 
 
-main.exe : main.o Combine.o CloseCoutSentry.o SideFunctions.o
+main.exe : main.o Combine.o CloseCoutSentry.o
 	$(CC) $^ -o $@ $(ROOT) $(ROOFIT)
 
 

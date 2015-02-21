@@ -44,7 +44,10 @@ class Combine{
   int SplitPOI();
   
  private:
-
+  ModelConfig* CreateModelConfig(const RooWorkspace* wsinput, RooWorkspace* wsout);
+  int SplitVarNames( string name, vector<vector<string>> &splittedNames );
+  string EditLine( vector< vector< string >> &splittedNames, string combinedVar );
+  int FindVariable( string var, vector<string> &varList );
   void GetPOIMinMax(TString poi_list, vector<string> *combined_pois_name, vector<string> *max_pois, vector<string> *min_pois);
   void GetPOI(TString poi_list, vector<string> *pois_name);
   void GetComponents(RooProdPdf *prodpdf, RooArgSet *np);
