@@ -925,7 +925,7 @@ int Combine::SplitPOI() {
     newmc->SetParametersOfInterest( *poi );
     tempWS->import( *newmc );
 
-    tempWS->writeToFile(  TString(m_files_name[ channel ].c_str()) + "_CombConvention.root" );
+    tempWS->writeToFile(  TString(m_files_name[ channel ].substr(0, m_files_name[ channel ].find_last_of( "." )).c_str()) + "_CombConvention.root" );
     //Change the information for the following program to find the new input workspace
     m_workspaces_name[ channel ] = tempWS->GetName();
     m_files_name[ channel ] = TString(m_files_name[ channel ].substr(0, m_files_name[ channel ].find_last_of( "." )).c_str()) + "_CombConvention.root";
